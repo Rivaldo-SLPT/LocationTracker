@@ -1,0 +1,185 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Diseño de la base de datos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; }
+body {
+    margin: 0; width: 1800px; height: 900px;
+    font-family: "Inter", Segoe UI, Arial, sans-serif;
+    background: #f1f5f9; color: #0f172a;
+    padding: 40px 48px;
+}
+h1 { margin: 0; font-size: 34px; font-weight: 800; }
+.subtitle { margin: 6px 0 0; color: #64748b; font-size: 17px; }
+
+.row { display: grid; grid-template-columns: 1fr 150px 1fr 150px 1fr; align-items: start; margin-top: 34px; }
+
+.zone { border-radius: 18px; padding: 18px; background: #fff; box-shadow: 0 1px 3px rgba(15,23,42,.08), 0 8px 24px rgba(15,23,42,.07); }
+.zone-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.zone-icon { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; color: #fff; font-size: 22px; font-weight: 800; }
+.zone-head strong { font-size: 19px; display: block; }
+.zone-head small { color: #64748b; font-size: 14px; }
+
+.entity { border: 2px solid; border-radius: 12px; overflow: hidden; }
+.entity-title { padding: 10px 14px; color: #fff; font-weight: 700; font-size: 17px; display: flex; justify-content: space-between; align-items: center; }
+.entity-title span { font-weight: 500; font-size: 13px; opacity: .9; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+td { padding: 8px 12px; border-top: 1px solid #e2e8f0; vertical-align: top; }
+td.k { width: 46px; font-weight: 800; font-size: 12px; }
+td.name { font-family: Consolas, ui-monospace, monospace; font-weight: 600; white-space: nowrap; }
+td.type { font-family: Consolas, ui-monospace, monospace; color: #475569; white-space: nowrap; }
+td.desc { color: #64748b; font-size: 13px; }
+.pk { color: #b45309; }
+.sk { color: #7c3aed; }
+.only { background: #fff7ed; }
+.na { color: #94a3b8; }
+
+.green { --c: #16a34a; }
+.orange { --c: #ea580c; }
+.indigo { --c: #4f46e5; }
+.green .zone-icon, .green .entity-title { background: #16a34a; }
+.green .entity { border-color: #16a34a; }
+.orange .zone-icon, .orange .entity-title { background: #ea580c; }
+.orange .entity { border-color: #ea580c; }
+.indigo .zone-icon, .indigo .entity-title { background: #4f46e5; }
+.indigo .entity { border-color: #4f46e5; }
+
+.arrow { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: 150px; gap: 8px; text-align: center; }
+.arrow svg { width: 140px; height: 28px; }
+.arrow b { font-size: 14px; }
+.arrow small { font-size: 12.5px; color: #64748b; line-height: 1.35; }
+
+.notes { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 20px; margin-top: 26px; }
+.note { background: #fff; border-radius: 14px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(15,23,42,.08); font-size: 14px; line-height: 1.5; }
+.note h3 { margin: 0 0 8px; font-size: 16px; }
+.note ul { margin: 0; padding-left: 18px; color: #334155; }
+.rel { display: flex; align-items: center; gap: 12px; margin: 6px 0 10px; font-weight: 700; font-size: 15px; }
+.pill { padding: 5px 12px; border-radius: 999px; background: #eef2ff; color: #4338ca; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: #475569; margin-top: 8px; }
+.legend b { font-size: 12px; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: #fff7ed; border: 1px solid #fdba74; vertical-align: -2px; }
+.idx { margin-top: 10px; font-size: 13px; color: #475569; }
+.idx code { font-family: Consolas, monospace; background: #f1f5f9; padding: 1px 6px; border-radius: 6px; }
+</style>
+</head>
+<body>
+
+<h1>LocationTracker — Diseño de la base de datos</h1>
+<p class="subtitle">Cada teléfono guarda sus ubicaciones en local (SQLite) y las sube a AWS (DynamoDB). La página web las lee por <b>deviceId</b>.</p>
+
+<div class="row">
+
+    <!-- ============ TELÉFONO ============ -->
+    <div class="zone green">
+        <div class="zone-head">
+            <div class="zone-icon">📱</div>
+            <div><strong>Teléfono Android</strong><small>SQLite con Room · location_tracker_database · v2</small></div>
+        </div>
+        <div class="entity">
+            <div class="entity-title">locations <span>tabla local</span></div>
+            <table>
+                <tr class="only"><td class="k pk">PK</td><td class="name">id</td><td class="type">INTEGER</td><td class="desc">Autoincremental</td></tr>
+                <tr><td class="k"></td><td class="name">latitude</td><td class="type">REAL</td><td class="desc">Grados</td></tr>
+                <tr><td class="k"></td><td class="name">longitude</td><td class="type">REAL</td><td class="desc">Grados</td></tr>
+                <tr><td class="k"></td><td class="name">timestamp</td><td class="type">INTEGER</td><td class="desc">Creación del registro (ms)</td></tr>
+                <tr><td class="k"></td><td class="name">accuracy</td><td class="type">REAL</td><td class="desc">Precisión GPS (m)</td></tr>
+                <tr class="only"><td class="k"></td><td class="name">synced</td><td class="type">INTEGER</td><td class="desc">0 / 1 · ¿ya subido a AWS?</td></tr>
+                <tr><td class="k"></td><td class="name">fixTimestamp</td><td class="type">INTEGER</td><td class="desc">Cuándo el GPS obtuvo la posición (v2)</td></tr>
+                <tr><td class="k"></td><td class="name">stale</td><td class="type">INTEGER</td><td class="desc">0 / 1 · sin señal nueva (v2)</td></tr>
+            </table>
+        </div>
+        <div class="idx">El <b>deviceId</b> no se guarda aquí: está en SharedPreferences
+            (<code>device_id_prefs</code>) y se añade al subir.</div>
+    </div>
+
+    <div class="arrow">
+        <svg viewBox="0 0 140 28"><path d="M4 14h122" stroke="#16a34a" stroke-width="4" stroke-linecap="round"/><path d="M116 4l18 10-18 10z" fill="#16a34a"/></svg>
+        <b>POST /locations</b>
+        <small>JSON por registro<br>cada 30 s (SyncWorker)<br>si AWS responde 2xx →<br>synced = 1</small>
+    </div>
+
+    <!-- ============ AWS ============ -->
+    <div class="zone orange">
+        <div class="zone-head">
+            <div class="zone-icon">☁</div>
+            <div><strong>AWS</strong><small>API Gateway → Lambda → DynamoDB</small></div>
+        </div>
+        <div class="entity">
+            <div class="entity-title">Tabla de ubicaciones <span>DynamoDB</span></div>
+            <table>
+                <tr><td class="k pk">PK</td><td class="name">deviceId</td><td class="type">String</td><td class="desc">ID del teléfono</td></tr>
+                <tr><td class="k sk">SK</td><td class="name">timestamp</td><td class="type">Number</td><td class="desc">Orden del recorrido (ms)</td></tr>
+                <tr><td class="k"></td><td class="name">latitude</td><td class="type">Number</td><td class="desc"></td></tr>
+                <tr><td class="k"></td><td class="name">longitude</td><td class="type">Number</td><td class="desc"></td></tr>
+                <tr><td class="k"></td><td class="name">accuracy</td><td class="type">Number</td><td class="desc">Precisión (m)</td></tr>
+                <tr><td class="k"></td><td class="name na">fixTimestamp</td><td class="type na">Number</td><td class="desc">Se envía, pero el GET no lo devuelve</td></tr>
+                <tr><td class="k"></td><td class="name na">stale</td><td class="type na">Boolean</td><td class="desc">Se envía, pero el GET no lo devuelve</td></tr>
+            </table>
+        </div>
+        <div class="idx">Claves deducidas de la API (filtra por <code>deviceId</code> y ordena por
+            <code>timestamp</code>). Confírmalas en la consola de DynamoDB.</div>
+    </div>
+
+    <div class="arrow">
+        <svg viewBox="0 0 140 28"><path d="M4 14h122" stroke="#ea580c" stroke-width="4" stroke-linecap="round"/><path d="M116 4l18 10-18 10z" fill="#ea580c"/></svg>
+        <b>GET /locations<br>?deviceId=…</b>
+        <small>Una consulta por<br>teléfono, cada 5 s</small>
+    </div>
+
+    <!-- ============ WEB ============ -->
+    <div class="zone indigo">
+        <div class="zone-head">
+            <div class="zone-icon">🌐</div>
+            <div><strong>Página web (S3)</strong><small>localStorage del navegador</small></div>
+        </div>
+        <div class="entity">
+            <div class="entity-title">devices <span>lista de teléfonos</span></div>
+            <table>
+                <tr><td class="k pk">PK</td><td class="name">id</td><td class="type">String</td><td class="desc">= deviceId en AWS</td></tr>
+                <tr><td class="k"></td><td class="name">name</td><td class="type">String</td><td class="desc">"Mi S24 Ultra"</td></tr>
+                <tr><td class="k"></td><td class="name">color</td><td class="type">String</td><td class="desc">Color del recorrido</td></tr>
+            </table>
+        </div>
+        <div class="idx" style="margin-top:16px">Teléfonos registrados:</div>
+        <table style="margin-top:6px;font-size:13.5px">
+            <tr><td class="name" style="border:none"><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#2563eb"></span> s24-ultra-001</td><td class="desc" style="border:none">Mi S24 Ultra</td></tr>
+            <tr><td class="name" style="border:none"><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#e11d48"></span> 962d6cc7-…42b0</td><td class="desc" style="border:none">Teléfono de prueba</td></tr>
+        </table>
+    </div>
+</div>
+
+<div class="notes">
+    <div class="note">
+        <h3>Relación</h3>
+        <div class="rel"><span class="pill">Teléfono (deviceId)</span> 1 ─── N <span class="pill">Ubicaciones</span></div>
+        <ul>
+            <li>Cada instalación de la app genera un <b>deviceId</b> propio (UUID); el S24 conserva <b>s24-ultra-001</b>.</li>
+            <li>En DynamoDB, todas las ubicaciones de un teléfono comparten la misma clave de partición.</li>
+        </ul>
+    </div>
+    <div class="note">
+        <h3>Ciclo de un registro</h3>
+        <ul>
+            <li>El servicio guarda una fila cada 30 s con <b>synced = 0</b>.</li>
+            <li>Sin señal nueva: repite la última posición con <b>stale = 1</b>.</li>
+            <li>El SyncWorker la sube; con HTTP 2xx pasa a <b>synced = 1</b>. Sin internet espera y reintenta.</li>
+        </ul>
+    </div>
+    <div class="note">
+        <h3>Leyenda</h3>
+        <div class="legend">
+            <span><b class="pk">PK</b> clave primaria / de partición</span>
+            <span><b class="sk">SK</b> clave de ordenación</span>
+        </div>
+        <div class="legend" style="margin-top:10px">
+            <span><i class="sw"></i> campo que solo existe en el teléfono</span>
+            <span><span class="na">gris</span> = no se lee desde la web</span>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

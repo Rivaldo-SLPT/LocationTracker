@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Reglas de copia de seguridad para Android 11 y anteriores.
+   El historial de ubicaciones es información sensible: no se
+   incluye en las copias de seguridad.
+-->
+<full-backup-content>
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+</full-backup-content>
